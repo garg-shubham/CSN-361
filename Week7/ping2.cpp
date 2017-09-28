@@ -20,7 +20,7 @@ short in_cksum(u_short *addr, int len);
 using namespace std;
 
 sockaddr_in sasend,sarecv;
-struct icmp *icmpx,*icmp_temp;
+struct icmp *icmpx,*icmp_temp,*icmpy;
 string host;
 int pid;
 int nsent;
@@ -92,28 +92,28 @@ void proc_v4(char *ptr, ssize_t len, struct timeval *tvrecv, char *host)
 {
 	struct ip *ip_packet = (struct ip *) ptr;		/* start of IP header */
 	int hlen1 = ip_packet -> ip_hl << 2;			/* length of IP header */
-	icmpx = (struct icmp *) (ptr + hlen1);			/* start of ICMP header */
+	icmpy = (struct icmp *) (ptr + hlen1);			/* start of ICMP header */
 	int icmplen = len - hlen1;
 	if (icmplen < 8)
 	{
 		printf("icmplen (%d) < 8", icmplen);
 	}
-	if (icmpx->icmp_type == ICMP_ECHOREPLY)
+	if (icmpy->icmp_type == ICMP_ECHOREPLY)
 	{
-		if (icmpx->icmp_id != pid)
+		if (icmpy->icmp_id != pid)
 			return;
 		/* not a response to our ECHO_REQUEST */
 		if (icmplen < 16)
 			printf("icmplen (%d) < 16", icmplen);
-		
+		icmp_temp = icmpy + 70;
 		tvsend = (struct timeval *) icmp_temp;
 		tv_sub(tvrecv, tvsend);
 		float rtt = tvrecv->tv_sec * 1000.0 + tvrecv->tv_usec / 1000.0;
 		char *str;
-		printf("%.5s\n",icmpx -> icmp_data);
+		printf("%.5s\n",icmpy -> icmp_data);
 		// strcpy(str,(char *)icmpx->icmp_data);
 		// printf("%.5s",str);
-		printf("%d bytes from %s: seq=%u, ttl=%d, rtt=%.3f ms\n", icmplen, host,icmpx->icmp_seq, ip_packet->ip_ttl, rtt);
+		printf("%d bytes from %s: seq=%u, ttl=%d, rtt=%.3f ms\n", icmplen, host,icmpy->icmp_seq, ip_packet->ip_ttl, rtt);
 	}
 }
 short in_cksum(u_short *addr, int len) {
